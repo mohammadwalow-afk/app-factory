@@ -138,15 +138,68 @@ function download(html,name){
   document.body.appendChild(a);a.click();a.remove();
 }
 function saveApp(html){
-  const name=titleOf(html);
-  apps.unshift({id:Date.now(),name,html,date:new Date().toLocaleDateString('ar')});
-  sv('apps',apps);renderApps();return name;
+  const a={id:Date.now(),name:titleOf(html),html,date:new Date().toLocaleDateString('ar')};
+  apps.unshift(a);
+  sv('apps',apps);renderApps();return a;
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function makeIcon(size,name,id){
+  return new Promise(res=>{
+    const c=document.createElement('canvas');c.width=c.height=size;
+    const x=c.getContext('2d');
+    const h=id%360,g=x.createLinearGradient(0,0,size,size);
+    g.addColorStop(0,'hsl('+h+',75%,55%)');g.addColorStop(1,'hsl('+((h+50)%360)+',80%,45%)');
+    x.fillStyle=g;x.fillRect(0,0,size,size);
+    const ch=(Array.from(String(name||'?').trim())[0]||'?').toUpperCase();
+    x.fillStyle='#fff';x.font='700 '+Math.round(size*0.5)+'px system-ui,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText(ch,size/2,size/2+size*0.03);
+    c.toBlob(b=>res(b),'image/png');
+  });
+}
+// يجهّز التطبيق كصفحة مستقلة لها manifest وأيقونة ثم يفتحها ليُثبَّت على الشاشة
+async function installApp(a){
+  try{
+    if(!('serviceWorker' in navigator)||!window.caches)throw new Error('no-sw');
+    const reg=await navigator.serviceWorker.getRegistration();
+    if(!reg||!reg.active)throw new Error('sw-not-ready');
+    const shell=await (await fetch('app-shell.html')).text();
+    if(!/__ID__/.test(shell))throw new Error('no-shell');
+    const base=new URL('a/'+a.id+'/',reg.scope);
+    const page=shell.replace(/__NAME__/g,esc(a.name)).replace(/__ID__/g,String(a.id));
+    const manifest={name:a.name,short_name:Array.from(a.name).slice(0,12).join(''),start_url:'index.html',scope:'./',display:'standalone',orientation:'portrait',dir:'rtl',lang:'ar',background_color:'#0f1115',theme_color:'#0f1115',
+      icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+    const [i1,i2]=await Promise.all([makeIcon(192,a.name,a.id),makeIcon(512,a.name,a.id)]);
+    const c=await caches.open('apps-v1');
+    const put=(n,body,type)=>c.put(new Request(new URL(n,base).href),new Response(body,{headers:{'Content-Type':type}}));
+    await Promise.all([
+      put('index.html',page,'text/html;charset=utf-8'),
+      put('app.html',a.html,'text/html;charset=utf-8'),
+      put('manifest.json',JSON.stringify(manifest),'application/manifest+json'),
+      put('icon-192.png',i1,'image/png'),
+      put('icon-512.png',i2,'image/png')
+    ]);
+    const url=base.href+'index.html';
+    if(!window.open(url,'_blank'))location.href=url;
+  }catch(e){
+    alert('تعذّر تجهيز التثبيت ('+(e&&e.message||e)+').\nتأكد أن المصنع مفتوح من رابط GitHub (https) وليس كملف محلي، وأنك رفعت sw.js و app-shell.html الجديدين، ثم أغلق التطبيق وافتحه مرتين.');
+  }
+}
+async function dropInstalled(id){
+  try{
+    const c=await caches.open('apps-v1');
+    const ks=await c.keys();
+    await Promise.all(ks.filter(r=>r.url.includes('/a/'+id+'/')).map(r=>c.delete(r)));
+  }catch(e){}
 }
 function addActions(el,html){
   const r=document.createElement('div');r.className='row';
-  const mk=(t,c,f)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;r.appendChild(b)};
-  mk('▶ تشغيل','pri',()=>runApp(html,titleOf(html)));
-  mk('💾 حفظ',0,function(){saveApp(html);this.textContent='✓ تم الحفظ';this.disabled=true});
+  let saved=null;
+  const ensure=()=>saved||(saved=saveApp(html));
+  const mk=(t,c,f)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;r.appendChild(b);return b};
+  const markSaved=()=>{saveBtn.textContent='✓ تم الحفظ';saveBtn.disabled=true};
+  mk('📲 تثبيت','pri',()=>{const a=ensure();markSaved();installApp(a)});
+  mk('▶ تشغيل',0,()=>runApp(html,titleOf(html)));
+  const saveBtn=mk('💾 حفظ',0,()=>{ensure();markSaved()});
   mk('⬇ تنزيل',0,()=>download(html,titleOf(html)));
   el.appendChild(r);
 }
@@ -160,9 +213,10 @@ function renderApps(){
     d.querySelector('h3').textContent=a.name;d.querySelector('small').textContent=a.date;
     const r=d.querySelector('.row');
     const mk=(t,c,f)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;r.appendChild(b)};
-    mk('▶ تشغيل','pri',()=>runApp(a.html,a.name));
+    mk('📲 تثبيت','pri',()=>installApp(a));
+    mk('▶ تشغيل',0,()=>runApp(a.html,a.name));
     mk('⬇ تنزيل',0,()=>download(a.html,a.name));
-    mk('🗑 حذف','danger',()=>{if(confirm('حذف «'+a.name+'»؟')){apps=apps.filter(x=>x.id!==a.id);sv('apps',apps);renderApps()}});
+    mk('🗑 حذف','danger',()=>{if(confirm('حذف «'+a.name+'»؟')){apps=apps.filter(x=>x.id!==a.id);sv('apps',apps);dropInstalled(a.id);renderApps()}});
     box.appendChild(d);
   });
 }
