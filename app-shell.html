@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>__NAME__</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+html,body{margin:0;height:100%;background:#0f1115;overflow:hidden}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
+#ins{display:none;position:fixed;z-index:9;top:10px;left:10px;background:#7c5cff;color:#fff;border:0;border-radius:12px;padding:10px 14px;font:600 14px system-ui,sans-serif;box-shadow:0 4px 16px #0006}
+#err{display:none;color:#eee;font:16px system-ui,sans-serif;text-align:center;padding:40px 20px}
+</style>
+</head>
+<body>
+<iframe id="f" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe>
+<button id="ins">📲 تثبيت على الشاشة</button>
+<div id="err">تعذّر تحميل التطبيق.</div>
+<script>
+(function(){
+  var K='appdata___ID__';
+  var f=document.getElementById('f'),ins=document.getElementById('ins');
+  var data={};
+  try{data=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}
+  // بديل localStorage داخل الصندوق المعزول: يحفظ بيانات التطبيق عبر هذه الصفحة فقط
+  var code='(function(){var d='+JSON.stringify(data).replace(/</g,'\\u003c')+';'
+    +'function p(){try{parent.postMessage({ls:d},"*")}catch(e){}}'
+    +'var s={getItem:function(k){return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},'
+    +'setItem:function(k,v){d[k]=String(v);p()},removeItem:function(k){delete d[k];p()},'
+    +'clear:function(){for(var k in d)delete d[k];p()},key:function(i){return Object.keys(d)[i]||null}};'
+    +'Object.defineProperty(s,"length",{get:function(){return Object.keys(d).length}});'
+    +'try{Object.defineProperty(window,"localStorage",{value:s,configurable:true})}catch(e){}})();';
+  var shim='<scr'+'ipt>'+code+'</scr'+'ipt>';
+  fetch('app.html').then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){
+    // الـ doctype يجب أن يبقى أولاً، لذا يُحقن البديل بعد وسم <head>
+    var re=/<head[^>]*>/i;
+    f.srcdoc=re.test(t)?t.replace(re,function(h){return h+shim}):shim+t;
+  }).catch(function(){f.style.display='none';document.getElementById('err').style.display='block'});
+  window.addEventListener('message',function(e){
+    if(e.source===f.contentWindow&&e.data&&e.data.ls){
+      try{localStorage.setItem(K,JSON.stringify(e.data.ls))}catch(x){}
+    }
+  });
+  var dp=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;ins.style.display='block'});
+  ins.onclick=function(){if(dp){dp.prompt();dp=null;ins.style.display='none'}};
+  window.addEventListener('appinstalled',function(){ins.style.display='none'});
+})();
+</script>
+</body>
+</html>
