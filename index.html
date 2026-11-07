@@ -175,16 +175,22 @@ async function send(){
   hist.push({role:'user',parts:[{text}]});
   const wait=bubble('⏳ جارٍ الصنع...','a');
   try{
-    let model=cfg.model,r,tries=0;
-    const alts=(cfg.models||[]).filter(m=>m!==cfg.model);
+    const queue=[cfg.model].concat((cfg.models||[]).filter(m=>m!==cfg.model));
+    let qi=0,r,tries=0;
     while(true){
-      r=await gen(model);
-      if(r.res.ok||![429,500,503,504].includes(r.res.status))break;
+      r=await gen(queue[qi]);
+      const st=r.res.status;
+      if(r.res.ok||![429,500,503,504].includes(st))break;
       tries++;
-      if(tries>=4)break;
-      let msg='⏳ الخادم مزدحم، إعادة المحاولة ('+tries+')...';
-      if(tries===2&&alts.length){model=alts[0];msg+='\nبنموذج بديل: '+model}
-      wait.textContent=msg;
+      if(tries>=6)break;
+      if(st===429){
+        // الحصة مستهلكة لهذا النموذج: انتقل فوراً لنموذج آخر (حصته مستقلة)
+        if(qi+1>=queue.length)break;
+        qi++;wait.textContent='⏳ حصة النموذج امتلأت، أجرّب: '+queue[qi];
+        continue;
+      }
+      if(tries%2===0&&qi+1<queue.length)qi++;
+      wait.textContent='⏳ الخادم مزدحم، إعادة المحاولة ('+tries+') بـ '+queue[qi]+'...';
       await new Promise(s=>setTimeout(s,3000*tries));
     }
     const res=r.res,data=r.data;
