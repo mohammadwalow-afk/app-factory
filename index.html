@@ -48,6 +48,13 @@ a{color:var(--acc2)}
 </style>
 </head>
 <body>
+<div id="diag" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#b00020;color:#fff;font:12px/1.6 monospace;padding:8px 10px;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all"></div>
+<script>
+(function(){var d=document.getElementById('diag');function show(m){d.style.display='block';d.textContent+=m+'\n'}
+window.addEventListener('error',function(e){show('ERR: '+(e.message||'?')+' @'+(e.lineno||'?')+':'+(e.colno||'?'))});
+window.addEventListener('unhandledrejection',function(e){show('PROMISE: '+(e.reason&&e.reason.message||e.reason))});
+})();
+</script>
 <header><h1>🏭 مصنع التطبيقات</h1><button id="setBtn">⚙️ الإعدادات</button></header>
 <nav><button id="tChat" class="on">💬 الدردشة</button><button id="tApps">📱 تطبيقاتي (<span id="cnt">0</span>)</button></nav>
 <main>
@@ -57,6 +64,7 @@ a{color:var(--acc2)}
   </section>
   <section id="apps" class="view"></section>
 </main>
+<div id="ver" style="text-align:center;font-size:10px;color:#8b93a3;padding:2px 0 4px">إصدار 3</div>
 
 <div id="run"><div class="top"><b id="runName"></b><button id="runClose">✕ إغلاق</button></div><iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups" allow="camera *; microphone *; geolocation *; fullscreen *; clipboard-write *; accelerometer *; gyroscope *; magnetometer *"></iframe></div>
 
@@ -320,10 +328,4 @@ async function send(){
 }
 
 $('#send').onclick=send;
-$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/Mobi|Android/i.test(navigator.userAgent)){e.preventDefault();send()}});
-$('#tChat').onclick=()=>{$('#chat').classList.add('on');$('#apps').classList.remove('on');$('#tChat').classList.add('on');$('#tApps').classList.remove('on')};
-$('#tApps').onclick=()=>{$('#apps').classList.add('on');$('#chat').classList.remove('on');$('#tApps').classList.add('on');$('#tChat').classList.remove('on')};
-$('#runClose').onclick=()=>{$('#run').classList.remove('on');$('#frame').srcdoc=''};
-$('#setBtn').onclick=()=>{$('#key').value=cfg.key;$('#model').value=cfg.model;$('#owner').value=cfg.owner;$('#ghtoken').value=cfg.ghToken||'';$('#ghrepo').value=cfg.ghRepo||'';$('#dlg').showModal()};
-$('#closeCfg').onclick=()=>$('#dlg').close();
-$('#saveCfg').
+$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/Mobi|Android/i.test(navigat
