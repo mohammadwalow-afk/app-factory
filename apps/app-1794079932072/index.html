@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<!-- © 2026 Mohammad. All rights reserved. -->
+<html lang="ar" dir="rtl">
+<head><meta name="theme-color" content="#0f1115"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="author" content="Mohammad"><meta name="copyright" content="© 2026 Mohammad">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>حاسبة Mohammad Walow العلمية</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            touch-action: manipulation;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b, #31103f);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        .calculator-container {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: env(safe-area-inset-bottom, 10px);
+        }
+
+        .watermark {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #a78bfa;
+            letter-spacing: 1px;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+            margin-bottom: -5px;
+            direction: ltr;
+        }
+
+        .display {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+            direction: ltr;
+            box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .history {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.4);
+            min-height: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .current {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #f8fafc;
+            overflow-x: auto;
+            white-space: nowrap;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            direction: ltr;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            height: 54px;
+            font-size: 1.1rem;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Glass Glow Effect on Click */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .btn.glow::after {
+            transform: translate(-50%, -50%) scale(2.5);
+            opacity: 1;
+            transition: 0s;
+        }
+
+        /* Color Coding for Glass Buttons */
+        .btn.number {
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .btn.number.glow-active {
+            box-shadow: 0 0 15px #38bdf8, inset 0 0 10px rgba(56, 189, 248, 0.5);
+            border-color: #38bdf8;
+        }
+
+        .btn.operator {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+        .btn.operator.glow-active {
+            box-shadow: 0 0 15px #6366f1, inset 0 0 10px rgba(99, 102, 241, 0.5);
+            border-color: #6366f1;
+        }
+
+        .btn.scientific {
+            background: rgba(236, 72, 153, 0.12);
+            color: #f472b6;
+            font-size: 0.95rem;
+        }
+        .btn.scientific.glow-active {
+            box-shadow: 0 0 15px #ec4899, inset 0 0 10px rgba(236, 72, 153, 0.5);
+            border-color: #ec4899;
+        }
+
+        .btn.action {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+        .btn.action.glow-active {
+            box-shadow: 0 0 15px #ef4444, inset 0 0 10px rgba(239, 68, 68, 0.5);
+            border-color: #ef4444;
+        }
+
+        .btn.equals {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            grid-column: span 2;
+            width: 100%;
+        }
+        .btn.equals.glow-active {
+            box-shadow: 0 0 20px #22c55e, inset 0 0 15px rgba(34, 197, 94, 0.6);
+            border-color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-container">
+        <div class="watermark">mohammad walow</div>
+        
+        <div class="display">
+            <div class="history" id="history"></div>
+            <div class="current" id="current">0</div>
+        </div>
+
+        <div class="keypad">
+            <!-- Row 1: Scientific & Actions -->
+            <button class="btn scientific" onclick="appendFunc('sin(')">sin</button>
+            <button class="btn scientific" onclick="appendFunc('cos(')">cos</button>
+            <button class="btn scientific" onclick="appendFunc('tan(')">tan</button>
+            <button class="btn action" onclick="clearAll()">AC</button>
+
+            <!-- Row 2: Scientific & Actions -->
+            <button class="btn scientific" onclick="appendFunc('sqrt(')">√</button>
+            <button class="btn scientific" onclick="appendValue('^')">xʸ</button>
+            <button class="btn scientific" onclick="appendFunc('log(')">log</button>
+            <button class="btn action" onclick="deleteChar()">⌫</button>
+
+            <!-- Row 3: Numbers & Operators -->
+            <button class="btn scientific" onclick="appendValue('(')">(</button>
+            <button class="btn scientific" onclick="appendValue(')')">)</button>
+            <button class="btn scientific" onclick="appendValue('Math.PI')">π</button>
+            <button class="btn operator" onclick="appendValue('/')">÷</button>
+
+            <!-- Row 4 -->
+            <button class="btn number" onclick="appendValue('7')">7</button>
+            <button class="btn number" onclick="appendValue('8')">8</button>
+            <button class="btn number" onclick="appendValue('9')">9</button>
+            <button class="btn operator" onclick="appendValue('*')">×</button>
+
+            <!-- Row 5 -->
+            <button class="btn number" onclick="appendValue('4')">4</button>
+            <button class="btn number" onclick="appendValue('5')">5</button>
+            <button class="btn number" onclick="appendValue('6')">6</button>
+            <button class="btn operator" onclick="appendValue('-')">-</button>
+
+            <!-- Row 6 -->
+            <button class="btn number" onclick="appendValue('1')">1</button>
+            <button class="btn number" onclick="appendValue('2')">2</button>
+            <button class="btn number" onclick="appendValue('3')">3</button>
+            <button class="btn operator" onclick="appendValue('+')">+</button>
+
+            <!-- Row 7 -->
+            <button class="btn number" onclick="appendValue('0')">0</button>
+            <button class="btn number" onclick="appendValue('.')">.</button>
+            <button class="btn equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        const currentEl = document.getElementById('current');
+        const historyEl = document.getElementById('history');
+        let currentInput = '0';
+        let historyExpression = '';
+
+        // Add touch/click light glow effect
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Glow animation
+                button.classList.add('glow', 'glow-active');
+                setTimeout(() => {
+                    button.classList.remove('glow', 'glow-active');
+                }, 300);
+            });
+        });
+
+        function updateDisplay() {
+            currentEl.textContent = currentInput;
+            historyEl.textContent = historyExpression;
+        }
+
+        function appendValue(val) {
+            if (currentInput === '0' && val !== '.') {
+                currentInput = val;
+            } else {
+                currentInput += val;
+            }
+            updateDisplay();
+        }
+
+        function appendFunc(func) {
+            if (currentInput === '0') {
+                currentInput = func;
+            } else {
+                currentInput += func;
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            historyExpression = '';
+            updateDisplay();
+        }
+
+        function deleteChar() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function calculate() {
+            try {
+                historyExpression = currentInput;
+                // Replace visual symbols for JS evaluation
+                let parseStr = currentInput
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/\^/g, '**')
+                    .replace(/sqrt\(/g, 'Math.sqrt(')
+                    .replace(/sin\(/g, 'Math.sin((Math.PI/180)*') // Degrees conversion
+                    .replace(/cos\(/g, 'Math.cos((Math.PI/180)*')
+                    .replace(/tan\(/g, 'Math.tan((Math.PI/180)*')
+                    .replace(/log\(/g, 'Math.log10(');
+
+                let result = eval(parseStr);
+                
+                // Format decimal results if needed
+                if (!Number.isInteger(result)) {
+                    result = parseFloat(result.toFixed(8));
+                }
+
+                currentInput = result.toString();
+                updateDisplay();
+            } catch (error) {
+                currentInput = 'خطأ';
+                updateDisplay();
+                setTimeout(() => {
+                    currentInput = '0';
+                    updateDisplay();
+                }, 1200);
+            }
+        }
+    </script>
+<div style="text-align:center;font:11px system-ui;opacity:.5;padding:8px">© 2026 Mohammad</div><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script></body>
+</html>
