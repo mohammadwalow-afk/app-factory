@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<!-- © 2026 Mohammad. All rights reserved. -->
+<html lang="ar" dir="rtl">
+<head><meta name="theme-color" content="#0f1115"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="author" content="Mohammad"><meta name="copyright" content="© 2026 Mohammad">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>آلة حاسبة متقدمة</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            justify-content: space-between;
+        }
+
+        header {
+            padding: 15px 20px;
+            background: #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .history-btn {
+            background: none;
+            border: none;
+            color: #38bdf8;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* Display Area */
+        .display-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            flex-grow: 1;
+            word-break: break-all;
+            text-align: left;
+            direction: ltr;
+        }
+
+        .previous-calculation {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            min-height: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .current-calculation {
+            font-size: 3rem;
+            color: #ffffff;
+            font-weight: 300;
+        }
+
+        /* Keypad Grid (Forced LTR for standard number layout) */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 15px;
+            background: #1e293b;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            direction: ltr; 
+        }
+
+        button.btn {
+            background-color: #334155;
+            color: #f8fafc;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            height: 65px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.1s;
+            user-select: none;
+        }
+
+        button.btn:active {
+            transform: scale(0.95);
+        }
+
+        button.operator {
+            background-color: #0284c7;
+            color: #ffffff;
+        }
+
+        button.action {
+            background-color: #475569;
+            color: #cbd5e1;
+        }
+
+        button.equals {
+            background-color: #10b981;
+            color: #ffffff;
+            grid-column: span 2;
+            width: 100%;
+        }
+
+        /* History Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 10;
+        }
+
+        .modal.active {
+            transform: translateY(0);
+        }
+
+        .modal-content {
+            background: #1e293b;
+            width: 100%;
+            max-height: 70vh;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            direction: rtl;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .history-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            background: #334155;
+            padding: 10px 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            direction: ltr;
+        }
+
+        .history-item span {
+            color: #94a3b8;
+        }
+
+        .history-item strong {
+            color: #38bdf8;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <span>الآلة الحاسبة</span>
+        <button class="history-btn" onclick="toggleHistory()">السجل</button>
+    </header>
+
+    <div class="display-container">
+        <div class="previous-calculation" id="previous"></div>
+        <div class="current-calculation" id="current">0</div>
+    </div>
+
+    <div class="keypad">
+        <button class="btn action" onclick="clearAll()">AC</button>
+        <button class="btn action" onclick="deleteDigit()">⌫</button>
+        <button class="btn operator" onclick="appendOperator('%')">%</button>
+        <button class="btn operator" onclick="appendOperator('/')">÷</button>
+
+        <button class="btn" onclick="appendNumber('7')">7</button>
+        <button class="btn" onclick="appendNumber('8')">8</button>
+        <button class="btn" onclick="appendNumber('9')">9</button>
+        <button class="btn operator" onclick="appendOperator('*')">×</button>
+
+        <button class="btn" onclick="appendNumber('4')">4</button>
+        <button class="btn" onclick="appendNumber('5')">5</button>
+        <button class="btn" onclick="appendNumber('6')">6</button>
+        <button class="btn operator" onclick="appendOperator('-')">-</button>
+
+        <button class="btn" onclick="appendNumber('1')">1</button>
+        <button class="btn" onclick="appendNumber('2')">2</button>
+        <button class="btn" onclick="appendNumber('3')">3</button>
+        <button class="btn operator" onclick="appendOperator('+')">+</button>
+
+        <button class="btn" onclick="appendNumber('0')">0</button>
+        <button class="btn" onclick="appendNumber('.')">.</button>
+        <button class="btn equals" onclick="calculate()">=</button>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>سجل العمليات</h3>
+                <button class="close-modal" onclick="toggleHistory()">إغلاق</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <!-- History items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let memoryHistory = [];
+
+        // Load storage safely
+        try {
+            const saved = localStorage.getItem('calc_history');
+            if (saved) memoryHistory = JSON.parse(saved);
+        } catch (e) {
+            memoryHistory = [];
+        }
+
+        const currentElem = document.getElementById('current');
+        const previousElem = document.getElementById('previous');
+        const historyListElem = document.getElementById('historyList');
+        const historyModal = document.getElementById('historyModal');
+
+        function updateDisplay() {
+            currentElem.innerText = currentInput;
+            previousElem.innerText = previousInput + (operation ? ` ${operation} ` : '');
+        }
+
+        function appendNumber(number) {
+            if (number === '.' && currentInput.includes('.')) return;
+            if (currentInput === '0' && number !== '.') {
+                currentInput = number;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operation !== null) calculate();
+            previousInput = currentInput;
+            operation = op;
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+        }
+
+        function deleteDigit() {
+            if (currentInput.length === 1) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (operation === null || previousInput === '') return;
+            let result;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(curr)) return;
+
+            switch (operation) {
+                case '+': result = prev + curr; break;
+                case '-': result = prev - curr; break;
+                case '*': result = prev * curr; break;
+                case '/': result = curr === 0 ? 'خطأ' : prev / curr; break;
+                case '%': result = prev % curr; break;
+                default: return;
+            }
+
+            const calculationString = `${prev} ${operation} ${curr} = ${result}`;
+            
+            // Save to history
+            memoryHistory.unshift(calculationString);
+            if (memoryHistory.length > 20) memoryHistory.pop();
+            
+            try {
+                localStorage.setItem('calc_history', JSON.stringify(memoryHistory));
+            } catch (e) {
+                // Ignore storage errors
+            }
+
+            currentInput = result.toString();
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+        }
+
+        function toggleHistory() {
+            historyModal.classList.toggle('active');
+            if (historyModal.classList.contains('active')) {
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            historyListElem.innerHTML = '';
+            if (memoryHistory.length === 0) {
+                historyListElem.innerHTML = '<p style="text-align:center; color:#64748b;">لا توجد عمليات سابقة</p>';
+                return;
+            }
+            memoryHistory.forEach(item => {
+                const parts = item.split('=');
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `<span>${parts[0]}</span><strong>= ${parts[1]}</strong>`;
+                historyListElem.appendChild(div);
+            });
+        }
+    </script>
+<div style="text-align:center;font:11px system-ui;opacity:.5;padding:8px">© 2026 Mohammad</div><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script></body>
+</html>
