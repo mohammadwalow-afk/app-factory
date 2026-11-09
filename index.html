@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>مصنع التطبيقات</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--txt:#eef1f6;--mut:#8b93a3;--acc:#7c5cff;--acc2:#22d3ee}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;color:transparent}
+button{font:inherit;color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc)}
+button.danger{color:#ff6b6b}
+nav{display:flex;gap:8px;padding:8px 16px}
+nav button{flex:1}
+nav button.on{background:var(--acc);border-color:var(--acc)}
+main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.view{display:none;flex:1;overflow-y:auto;padding:12px 16px}
+.view.on{display:block}
+#chat.on{display:flex;flex-direction:column}
+#msgs{flex:1;overflow-y:auto}
+.b{max-width:92%;margin:8px 0;padding:10px 14px;border-radius:14px;white-space:pre-wrap;line-height:1.7;word-break:break-word}
+.b.u{background:var(--acc);margin-inline-start:auto;border-end-end-radius:4px}
+.b.a{background:var(--card);border:1px solid var(--line);border-end-start-radius:4px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.bar{display:flex;gap:8px;padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
+textarea{flex:1;resize:none;height:48px;max-height:120px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}
+.app{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.app h3{margin:0 0 4px;font-size:16px}.app small{color:var(--mut)}
+.empty{color:var(--mut);text-align:center;margin-top:40px;line-height:1.9}
+#run{position:fixed;inset:0;background:#000;z-index:50;display:none;flex-direction:column}
+#run.on{display:flex}
+#run iframe{flex:1;border:0;width:100%;background:#fff}
+#run .top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card)}
+dialog{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:16px;width:min(92vw,420px);padding:18px}
+dialog::backdrop{background:#000a}
+label{display:block;margin:12px 0 4px;color:var(--mut);font-size:13px}
+input{width:100%;background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;direction:ltr;text-align:left}
+a{color:var(--acc2)}
+#toast{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;z-index:60;display:none;line-height:1.8;box-shadow:0 8px 28px #0008}
+</style>
+</head>
+<body>
+<div id="diag" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#b00020;color:#fff;font:12px/1.6 monospace;padding:8px 10px;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all"></div>
+<script>
+(function(){var d=document.getElementById('diag');function show(m){d.style.display='block';d.textContent+=m+'\n'}
+window.addEventListener('error',function(e){show('ERR: '+(e.message||'?')+' @'+(e.lineno||'?')+':'+(e.colno||'?'))});
+window.addEventListener('unhandledrejection',function(e){show('PROMISE: '+(e.reason&&e.reason.message||e.reason))});
+})();
+</script>
+<header><h1>🏭 مصنع التطبيقات</h1><button id="setBtn">⚙️ الإعدادات</button></header>
+<nav><button id="tChat" class="on">💬 الدردشة</button><button id="tApps">📱 تطبيقاتي (<span id="cnt">0</span>)</button></nav>
+<main>
+  <section id="chat" class="view on">
+    <div id="msgs"></div>
+    <div class="bar"><textarea id="inp" placeholder="اكتب: اصنع لي تطبيق حاسبة..."></textarea><button class="pri" id="send">إرسال</button></div>
+  </section>
+  <section id="apps" class="view"></section>
+</main>
+<div id="ver" style="text-align:center;font-size:10px;color:#8b93a3;padding:2px 0 4px">إصدار 4</div>
+
+<div id="run"><div class="top"><b id="runName"></b><button id="runClose">✕ إغلاق</button></div><iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups" allow="camera *; microphone *; geolocation *; fullscreen *; clipboard-write *; accelerometer *; gyroscope *; magnetometer *"></iframe></div>
+
+<div id="toast"></div>
+
+<dialog id="dlg">
+  <h3 style="margin-top:0">الإعدادات</h3>
+  <label>مفتاح Gemini المجاني (من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>)</label>
+  <input id="key" type="password" placeholder="AIza...">
+  <label>اسم النموذج</label>
+  <input id="model" list="mlist" placeholder="gemini-3.8-flash">
+  <datalist id="mlist"></datalist>
+  <div class="row"><button id="loadModels">🔄 تحديث قائمة النماذج</button><small id="mstat" style="color:var(--mut);align-self:center"></small></div>
+  <label>اسم المالك (يُختم داخل كل تطبيق)</label>
+  <input id="owner" placeholder="Mohammad" style="direction:rtl;text-align:right">
+  <label>مفتاح GitHub للنشر (يبقى على هاتفك فقط)</label>
+  <input id="ghtoken" type="password" placeholder="github_pat_...">
+  <label>المستودع (المالك/الاسم)</label>
+  <input id="ghrepo" placeholder="mohammadwalow-afk/app-factory">
+  <div class="row" style="margin-top:16px"><button class="pri" id="saveCfg">حفظ</button><button id="closeCfg">إغلاق</button><button class="danger" id="newChat">محادثة جديدة</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let cfg=Object.assign({key:'',model:'gemini-3.8-flash',owner:'Mohammad',models:[],ghToken:'',ghRepo:'mohammadwalow-afk/app-factory'},ld('cfg',{}));
+const API='https://generativelanguage.googleapis.com/v1beta/';
+function fillList(){const dl=$('#mlist');dl.innerHTML='';(cfg.models||[]).forEach(m=>{const o=document.createElement('option');o.value=m;dl.appendChild(o)})}
+async function loadModels(){
+  if(!cfg.key){$('#mstat').textContent='ضع المفتاح أولاً';return}
+  $('#mstat').textContent='...';
+  try{
+    const r=await fetch(API+'models?pageSize=200',{headers:{'x-goog-api-key':cfg.key}});
+    const d=await r.json();
+    if(!r.ok)throw new Error((d.error&&d.error.message)||r.status);
+    cfg.models=(d.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&/flash/i.test(m.name)&&!/image|tts|live|audio|thinking-exp|embedding/i.test(m.name)).map(m=>m.name.replace('models/','')).sort().reverse();
+    sv('cfg',cfg);fillList();$('#mstat').textContent='✓ '+cfg.models.length+' نموذج';
+  }catch(e){$('#mstat').textContent='تعذّر التحديث'}
+}
+async function gen(model){
+  const res=await fetch(API+'models/'+encodeURIComponent(model)+':generateContent',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':cfg.key},
+    body:JSON.stringify({systemInstruction:{parts:[{text:SYSTEM}]},contents:hist,generationConfig:{maxOutputTokens:30000}})
+  });
+  let data={};try{data=await res.json()}catch(e){}
+  return {res,data};
+}
+let apps=ld('apps',[]);
+let hist=[];
+let busy=false;
+
+const SYSTEM=`You are an expert builder of mobile apps delivered as a single self-contained HTML file. The user speaks Arabic; reply in Arabic.
+When the user asks for an app: write one short Arabic sentence, then ONE complete HTML file inside a single \`\`\`html code block.
+Rules for every app: mobile-first and touch friendly, full screen, Arabic RTL interface unless asked otherwise, modern dark design, viewport meta tag, a <title> with the app name, all CSS and JS inline, no external libraries or network resources unless the user asks for them.
+The app runs inside a sandboxed iframe where localStorage may be blocked: wrap every storage call in try/catch and fall back to in-memory variables.
+Even in Arabic RTL apps, anything numeric must be laid out left-to-right: calculator keypads, phone dial pads, number grids and numeric inputs/displays must use direction:ltr (for example on the grid container) so digits appear in the standard order 7 8 9 / 4 5 6 / 1 2 3 / 0, with operators on the right. Keep Arabic text labels, titles and menus RTL.
+When the user asks for a change, return the full updated file, never a partial snippet.
+If the user is only chatting or asking a question, answer briefly without code.`;
+
+function stamp(html){
+  const y=new Date().getFullYear(), o=cfg.owner||'Owner';
+  const note=`<!-- © ${y} ${o}. All rights reserved. -->`;
+  if(!/<!doctype/i.test(html))html='<!doctype html>\n'+html;
+  html=html.replace(/<!doctype[^>]*>/i,m=>m+'\n'+note);
+  const meta=`<meta name="author" content="${o}"><meta name="copyright" content="© ${y} ${o}">`;
+  html=/<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+meta):html;
+  const foot=`<div style="text-align:center;font:11px system-ui;opacity:.5;padding:8px">© ${y} ${o}</div>`;
+  html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,foot+'</body>'):html+foot;
+  return html;
+}
+function titleOf(html){const m=html.match(/<title>([^<]*)<\/title>/i);return (m&&m[1].trim())||'تطبيق بدون اسم'}
+
+function bubble(text,cls){
+  const d=document.createElement('div');d.className='b '+cls;d.textContent=text;
+  $('#msgs').appendChild(d);$('#msgs').scrollTop=1e9;return d;
+}
+function runApp(html,name){
+  $('#runName').textContent=name;$('#frame').srcdoc=html;$('#run').classList.add('on');
+}
+function download(html,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=(name||'app').replace(/[^\w\u0600-\u06FF-]+/g,'_')+'.html';
+  document.body.appendChild(a);a.click();a.remove();
+}
+function saveApp(html){
+  const a={id:Date.now(),name:titleOf(html),html,date:new Date().toLocaleDateString('ar')};
+  apps.unshift(a);
+  sv('apps',apps);renderApps();return a;
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function makeIcon(size,name,id){
+  return new Promise(res=>{
+    const c=document.createElement('canvas');c.width=c.height=size;
+    const x=c.getContext('2d');
+    const h=id%360,g=x.createLinearGradient(0,0,size,size);
+    g.addColorStop(0,'hsl('+h+',75%,55%)');g.addColorStop(1,'hsl('+((h+50)%360)+',80%,45%)');
+    x.fillStyle=g;x.fillRect(0,0,size,size);
+    const ch=(Array.from(String(name||'?').trim())[0]||'?').toUpperCase();
+    x.fillStyle='#fff';x.font='700 '+Math.round(size*0.5)+'px system-ui,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText(ch,size/2,size/2+size*0.03);
+    c.toBlob(b=>res(b),'image/png');
+  });
+}
+// ===== BEGIN-PUBLISH =====
+let pubBusy=false;
+function say(msg,link){
+  const t=$('#toast');t.innerHTML='';t.style.display='block';
+  t.appendChild(document.createTextNode(msg));
+  if(link){t.appendChild(document.createElement('br'));const a=document.createElement('a');a.href=link;a.target='_blank';a.rel='noopener';a.textContent='🔗 فتح التطبيق ←';a.style.fontWeight='700';t.appendChild(a)}
+}
+$('#toast').onclick=e=>{if(!pubBusy&&e.target.tagName!=='A')$('#toast').style.display='none'};
+const b64text=s=>btoa(unescape(encodeURIComponent(s)));
+async function b64blob(b){const u=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+const ghHeaders=()=>({'Authorization':'Bearer '+cfg.ghToken,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'});
+async function ghPut(path,b64,msg){
+  const api='https://api.github.com/repos/'+cfg.ghRepo+'/contents/'+path.split('/').map(encodeURIComponent).join('/');
+  let sha;
+  const g=await fetch(api,{headers:ghHeaders(),cache:'no-store'});
+  if(g.ok){sha=(await g.json()).sha}
+  else if(g.status!==404)throw new Error('GH'+g.status);
+  const r=await fetch(api,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},ghHeaders()),body:JSON.stringify({message:msg,content:b64,sha})});
+  if(!r.ok)throw new Error('GH'+r.status);
+}
+function pwaPage(html){
+  const head='<meta name="theme-color" content="#0f1115"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">';
+  const reg='<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}<\/script>';
+  html=html.replace(/<link[^>]+rel=["']manifest["'][^>]*>/gi,'');
+  if(/<head[^>]*>/i.test(html))html=html.replace(/<head[^>]*>/i,m=>m+head);
+  else if(/<!doctype[^>]*>/i.test(html))html=html.replace(/<!doctype[^>]*>/i,m=>m+'<head>'+head+'</head>');
+  else html='<!doctype html><head>'+head+'</head>'+html;
+  html=/<\/body>/i.test(html)?html.replace(/<\/body>/i,m=>reg+m):html+reg;
+  return html;
+}
+const APP_SW=`const C='app-v1';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html'])).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim())});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;
+  e.respondWith(fetch(e.request).then(r=>{const c=r.clone();if(r.ok)caches.open(C).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./'))))
+});
+`;
+async function publishApp(a,fresh){
+  if(pubBusy)return;
+  if(!cfg.ghToken){say('أضف مفتاح GitHub أولاً من ⚙️ الإعدادات ثم اضغط «نشر وتثبيت» مرة أخرى.');$('#setBtn').click();return}
+  const parts=String(cfg.ghRepo||'').split('/');
+  if(parts.length!==2||!parts[0]||!parts[1]){say('❌ اسم المستودع في الإعدادات يجب أن يكون بالشكل: المالك/الاسم');return}
+  if(fresh){a.pub=(a.pub||0)+1;sv('apps',apps)}
+  pubBusy=true;
+  const dir='apps/app-'+a.id+(a.pub?'-'+a.pub:'')+'/';
+  const base='https://'+parts[0].toLowerCase()+'.github.io/'+parts[1]+'/'+dir;
+  try{
+    say('⏳ أجهّز الملفات...');
+    const [i1,i2]=await Promise.all([makeIcon(192,a.name,a.id),makeIcon(512,a.name,a.id)]);
+    const manifest={name:a.name,short_name:Array.from(a.name).slice(0,12).join(''),start_url:'./',scope:'./',display:'standalone',orientation:'portrait',dir:'rtl',lang:'ar',background_color:'#0f1115',theme_color:'#0f1115',
+      icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+    const files=[
+      ['icon-192.png',await b64blob(i1)],
+      ['icon-512.png',await b64blob(i2)],
+      ['manifest.json',b64text(JSON.stringify(manifest,null,2))],
+      ['sw.js',b64text(APP_SW)],
+      ['index.html',b64text(pwaPage(a.html))]
+    ];
+    let n=0;
+    for(const [f,c] of files){n++;say('⏳ أرفع الملفات إلى GitHub ('+n+'/'+files.length+')...');await ghPut(dir+f,c,'نشر '+a.name+' ('+f+')')}
+    a.url=base;sv('apps',apps);renderApps();
+    let live=false;
+    for(let i=0;i<40&&!live;i++){
+      say('⏳ الملفات رُفعت. ننتظر GitHub لينشر الصفحة... ('+(i*5)+' ثانية، قد تستغرق دقيقة أو دقيقتين)');
+      await new Promise(s=>setTimeout(s,5000));
+      try{const r=await fetch(base+'manifest.json?_='+Date.now(),{cache:'no-store'});live=r.ok}catch(e){}
+    }
+    pubBusy=false;
+    say(live?'✅ تم النشر! افتح التطبيق ثم اضغط ⋮ ← تثبيت التطبيق.':'تم الرفع، لكن النشر لم يظهر بعد. انتظر دقيقة ثم افتح الرابط وثبّته من ⋮.',base);
+  }catch(e){
+    pubBusy=false;
+    const m=String(e&&e.message||e);
+    say(m==='GH401'?'❌ المفتاح غير صحيح أو منتهي. أنشئ مفتاحاً جديداً وضعه في الإعدادات.'
+      :(m==='GH403'||m==='GH404')?'❌ المفتاح لا يملك صلاحية الكتابة (Contents) على المستودع، أو اسم المستودع في الإعدادات خطأ: '+cfg.ghRepo
+      :'❌ تعذّر النشر ('+m+'). تحقق من الاتصال وأعد المحاولة.');
+  }
+}
+function addActions(el,html){
+  const r=document.createElement('div');r.className='row';
+  let saved=null,saveBtn;
+  const ensure=()=>saved||(saved=saveApp(html));
+  const mk=(t,c,f)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;r.appendChild(b);return b};
+  const markSaved=()=>{saveBtn.textContent='✓ تم الحفظ';saveBtn.disabled=true};
+  mk('🚀 نشر وتثبيت','pri',()=>{const a=ensure();markSaved();publishApp(a)});
+  mk('▶ تشغيل',0,()=>runApp(html,titleOf(html)));
+  saveBtn=mk('💾 حفظ',0,()=>{ensure();markSaved()});
+  mk('⬇ تنزيل',0,()=>download(html,titleOf(html)));
+  el.appendChild(r);
+}
+// ===== END-PUBLISH =====
+
+function renderApps(){
+  $('#cnt').textContent=apps.length;
+  const box=$('#apps');box.innerHTML='';
+  if(!apps.length){box.innerHTML='<div class="empty">لا توجد تطبيقات بعد.<br>اطلب من الدردشة أن تصنع لك تطبيقاً ثم اضغط «حفظ».</div>';return}
+  apps.forEach(a=>{
+    const d=document.createElement('div');d.className='app';
+    d.innerHTML='<h3></h3><small></small><div class="row"></div>';
+    d.querySelector('h3').textContent=a.name;d.querySelector('small').textContent=a.date;
+    const r=d.querySelector('.row');
+    const mk=(t,c,f)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;r.appendChild(b)};
+    mk('🚀 نشر وتثبيت','pri',()=>publishApp(a));
+    if(a.url)mk('🔗 فتح الرابط',0,()=>window.open(a.url,'_blank'));
+    if(a.url)mk('🔁 نشر نسخة جديدة',0,()=>{if(confirm('ينشر «'+a.name+'» في مجلد جديد بعنوان جديد، لتتجاوز رسالة «سبق وتم تثبيته». متابعة؟'))publishApp(a,true)});
+    mk('▶ تشغيل',0,()=>runApp(a.html,a.name));
+    mk('⬇ تنزيل',0,()=>download(a.html,a.name));
+    mk('🗑 حذف','danger',()=>{if(confirm('حذف «'+a.name+'»؟')){apps=apps.filter(x=>x.id!==a.id);sv('apps',apps);renderApps()}});
+    box.appendChild(d);
+  });
+}
+
+async function send(){
+  const text=$('#inp').value.trim();
+  if(!text||busy)return;
+  if(!cfg.key){$('#dlg').showModal();return}
+  busy=true;$('#send').disabled=true;$('#inp').value='';
+  bubble(text,'u');
+  hist.push({role:'user',parts:[{text}]});
+  const wait=bubble('⏳ جارٍ الصنع...','a');
+  try{
+    const queue=[cfg.model].concat((cfg.models||[]).filter(m=>m!==cfg.model));
+    let qi=0,r,tries=0;
+    while(true){
+      r=await gen(queue[qi]);
+      const st=r.res.status;
+      if(r.res.ok||![429,500,503,504].includes(st))break;
+      tries++;
+      if(tries>=6)break;
+      if(st===429){
+        // الحصة مستهلكة لهذا النموذج: انتقل فوراً لنموذج آخر (حصته مستقلة)
+        if(qi+1>=queue.length)break;
+        qi++;wait.textContent='⏳ حصة النموذج امتلأت، أجرّب: '+queue[qi];
+        continue;
+      }
+      if(tries%2===0&&qi+1<queue.length)qi++;
+      wait.textContent='⏳ الخادم مزدحم، إعادة المحاولة ('+tries+') بـ '+queue[qi]+'...';
+      await new Promise(s=>setTimeout(s,3000*tries));
+    }
+    const res=r.res,data=r.data;
+    if(!res.ok){
+      const m=(data.error&&data.error.message)||('خطأ '+res.status);
+      wait.textContent=res.status===429?'⚠️ وصلت لحد الاستخدام المجاني. انتظر دقيقة وحاول مجدداً.':'⚠️ '+m;
+      hist.pop();
+    }else{
+      const out=((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+      hist.push({role:'model',parts:[{text:out}]});
+      const m=out.match(/```html\s*([\s\S]*?)```/)||out.match(/```html\s*([\s\S]*)$/);
+      if(m){
+        const html=stamp(m[1].trim());
+        wait.textContent=(out.replace(/```html[\s\S]*$/,'').trim()||'جاهز ✅');
+        addActions(wait,html);
+      }else wait.textContent=out||'(رد فارغ)';
+    }
+  }catch(e){wait.textContent='⚠️ تعذّر الاتصال. تحقق من الإنترنت.';hist.pop()}
+  busy=false;$('#send').disabled=false;$('#msgs').scrollTop=1e9;
+}
+
+$('#send').onclick=send;
+$('#inp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/Mobi|Android/i.test(navigator.userAgent)){e.preventDefault();send()}});
+$('#tChat').onclick=()=>{$('#chat').classList.add('on');$('#apps').classList.remove('on');$('#tChat').classList.add('on');$('#tApps').classList.remove('on')};
+$('#tApps').onclick=()=>{$('#apps').classList.add('on');$('#chat').classList.remove('on');$('#tApps').classList.add('on');$('#tChat').classList.remove('on')};
+$('#runClose').onclick=()=>{$('#run').classList.remove('on');$('#frame').srcdoc=''};
+$('#setBtn').onclick=()=>{$('#key').value=cfg.key;$('#model').value=cfg.model;$('#owner').value=cfg.owner;$('#ghtoken').value=cfg.ghToken||'';$('#ghrepo').value=cfg.ghRepo||'';$('#dlg').showModal()};
+$('#closeCfg').onclick=()=>$('#dlg').close();
+$('#saveCfg').onclick=()=>{const hadKey=cfg.key;cfg={key:$('#key').value.trim(),model:$('#model').value.trim()||'gemini-3.8-flash',owner:$('#owner').value.trim()||'Mohammad',models:cfg.models||[],ghToken:$('#ghtoken').value.trim(),ghRepo:$('#ghrepo').value.trim()||'mohammadwalow-afk/app-factory'};sv('cfg',cfg);$('#dlg').close();if(cfg.key&&(!hadKey||!cfg.models.length))loadModels()};
+$('#loadModels').onclick=()=>{cfg.key=$('#key').value.trim()||cfg.key;loadModels()};
+fillList();if(cfg.key&&!(cfg.models||[]).length)loadModels();
+$('#newChat').onclick=()=>{hist=[];$('#msgs').innerHTML='';welcome();$('#dlg').close()};
+
+function welcome(){bubble('أهلاً محمد 👋\nأنا مصنع التطبيقات. صف لي أي تطبيق وسأبنيه لك، ثم احفظه أو شغّله أو نزّله.\n\nمثال: «اصنع لي تطبيق قائمة مهام بتصميم بنفسجي».'+(cfg.key?'':'\n\nأولاً: اضغط ⚙️ وضع مفتاح Gemini المجاني.'),'a')}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+welcome();renderApps();
+</script>
+</body>
+</html>
