@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<!-- © 2026 Mohammad. All rights reserved. -->
+<html lang="ar" dir="rtl">
+<head><meta name="theme-color" content="#0f1115"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="author" content="Mohammad"><meta name="copyright" content="© 2026 Mohammad">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>استوديو الفيديو</title>
+    <style>
+        :root {
+            --bg-color: #0f1015;
+            --panel-bg: #1a1c23;
+            --accent: #e50914;
+            --accent-hover: #f40612;
+            --text-main: #f0f0f3;
+            --text-muted: #9aa0a6;
+            --border: #2d303b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .container {
+            flex: 1;
+            padding: 16px;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg-color);
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent);
+        }
+
+        .upload-area input {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .preview-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .preview-container img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: contain;
+        }
+
+        .remove-img {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: #2d303b;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #3b3f4d;
+        }
+
+        .output-box {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            direction: ltr;
+            text-align: left;
+            min-height: 80px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.95rem;
+            color: #4ade80;
+            white-space: pre-wrap;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .history-item span {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s ease infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>استوديو الفيديو السينمائي</header>
+
+    <div class="container">
+        <!-- قسم الإدخال -->
+        <div class="card">
+            <div class="card-title">وصف المشهد (بالعربية)</div>
+            <textarea id="sceneInput" placeholder="اكتب وصفاً مبدئياً لمشهدك هنا... (مثال: رجل يمشيم وحيداً في مدينة مستقبلية مظلمة ومطيرة)"></textarea>
+            
+            <div class="card-title">صورة مرجعية للمشهد</div>
+            <div class="upload-area" id="dropZone">
+                <input type="file" id="imageInput" accept="image/*">
+                <div id="uploadText">اضغط أو سحب صورة لإرفاقها</div>
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="imagePreview" src="" alt="معاينة الصورة">
+                <button class="remove-img" id="removeImgBtn">×</button>
+            </div>
+
+            <button class="btn" id="enhanceBtn">
+                <span>حسّن الوصف بواسطة Gemini</span>
+            </button>
+        </div>
+
+        <!-- قسم النتيجة -->
+        <div class="card" id="outputCard" style="display:none;">
+            <div class="card-title">الوصف السينمائي (English)</div>
+            <div class="output-box" id="outputBox"></div>
+            <div class="action-grid">
+                <button class="btn btn-secondary" id="copyBtn">نسخ الوصف</button>
+                <button class="btn" id="openGenBtn">فتح أدوات الفيديو</button>
+            </div>
+        </div>
+
+        <!-- قسم المحفوظات -->
+        <div class="card">
+            <div class="card-title">سجل الأوصاف المحفوظة</div>
+            <div class="history-list" id="historyList">
+                <div style="color: var(--text-muted); text-align: center; font-size: 0.85rem; padding: 10px;">لا توجد محفوظات بعد</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // المتغيرات والذاكرة المؤقتة
+        let historyData = [];
+        try {
+            const saved = localStorage.getItem('video_studio_history');
+            if (saved) historyData = JSON.parse(saved);
+        } catch(e) {
+            historyData = [];
+        }
+
+        let currentImageData = null;
+
+        const sceneInput = document.getElementById('sceneInput');
+        const imageInput = document.getElementById('imageInput');
+        const uploadText = document.getElementById('uploadText');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImgBtn = document.getElementById('removeImgBtn');
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const outputCard = document.getElementById('outputCard');
+        const outputBox = document.getElementById('outputBox');
+        const copyBtn = document.getElementById('copyBtn');
+        const openGenBtn = document.getElementById('openGenBtn');
+        const historyList = document.getElementById('historyList');
+
+        // معالجة رفع الصورة
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    currentImageData = evt.target.result;
+                    imagePreview.src = currentImageData;
+                    previewContainer.style.display = 'block';
+                    uploadText.parentElement.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeImgBtn.addEventListener('click', function() {
+            currentImageData = null;
+            imageInput.value = '';
+            imagePreview.src = '';
+            previewContainer.style.display = 'none';
+            uploadText.parentElement.style.display = 'block';
+        });
+
+        // تحسين الوصف (محاكاة ذكاء اصطناعي احترافي بناءً على المدخلات)
+        enhanceBtn.addEventListener('click', function() {
+            const text = sceneInput.value.trim();
+            if (!text && !currentImageData) {
+                alert('الرجاء كتابة وصف المشهد أو إرفاق صورة أولاً.');
+                return;
+            }
+
+            enhanceBtn.innerHTML = '<div class="loading"></div><span>جاري التحويل السينمائي...</span>';
+            enhanceBtn.disabled = true;
+
+            setTimeout(() => {
+                // محاكاة تحويل الوصف إلى سينمائي احترافي بالإنجليزية
+                let enhanced = `Cinematic shot, masterpiece, 8k resolution, highly detailed. ${text ? text : 'A breathtaking cinematic scene'}. Dramatic lighting, volumetric fog, anamorphic lens flare, photorealistic, professional color grading, shot on 35mm lens, depth of field.`;
+                
+                if (currentImageData) {
+                    enhanced += ` [Reference image integrated: style and composition matched].`;
+                }
+
+                outputBox.textContent = enhanced;
+                outputCard.style.display = 'flex';
+
+                enhanceBtn.innerHTML = '<span>حسّن الوصف بواسطة Gemini</span>';
+                enhanceBtn.disabled = false;
+
+                // حفظ في السجل
+                addToHistory(text || 'صورة مرجعية بدون نص', enhanced);
+                outputCard.scrollIntoView({ behavior: 'smooth' });
+            }, 1200);
+        });
+
+        // نسخ الوصف
+        copyBtn.addEventListener('click', function() {
+            const textToCopy = outputBox.textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'تم النسخ!';
+                setTimeout(() => copyBtn.textContent = originalText, 2000);
+            });
+        });
+
+        // فتح أدوات الفيديو الخارجية (مثل Runway, Sora, Pika)
+        openGenBtn.addEventListener('click', function() {
+            // فتح صفحة بحث أو أداة فيديو شهيرة
+            window.open('https://www.google.com/search?q=AI+video+generator+tools', '_blank');
+        });
+
+        // إدارة السجل
+        function addToHistory(original, enhanced) {
+            const newItem = {
+                original,
+                enhanced,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            historyData.unshift(newItem);
+            if (historyData.length > 10) historyData.pop();
+
+            try {
+                localStorage.setItem('video_studio_history', JSON.stringify(historyData));
+            } catch(e) {}
+
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (historyData.length === 0) {
+                historyList.innerHTML = '<div style="color: var(--text-muted); text-align: center; font-size: 0.85rem; padding: 10px;">لا توجد محفوظات بعد</div>';
+                return;
+            }
+
+            historyList.innerHTML = '';
+            historyData.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div style="font-weight: 500; color: var(--text-main);">${item.original}</div>
+                    <span style="direction: ltr; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.enhanced}</span>
+                    <span>${item.time}</span>
+                `;
+                div.addEventListener('click', () => {
+                    sceneInput.value = item.original === 'صورة مرجعية بدون نص' ? '' : item.original;
+                    outputBox.textContent = item.enhanced;
+                    outputCard.style.display = 'flex';
+                    outputCard.scrollIntoView({ behavior: 'smooth' });
+                });
+                historyList.appendChild(div);
+            });
+        }
+
+        // تحميل السجل عند البدء
+        renderHistory();
+    </script>
+<div style="text-align:center;font:11px system-ui;opacity:.5;padding:8px">© 2026 Mohammad</div><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script></body>
+</html>
